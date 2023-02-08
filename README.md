@@ -6,6 +6,14 @@ Este sistema de combate es al estilo de Pokemón: Combate por turnos, en equipos
 
 # Índice
 
+- Contenido.
+- Instalación.
+    - Configurar una nueva escena.
+    - Configurar las Skills de cada personaje.
+        - Habilidades de Salud.
+        - Habilidades de cambios de estadísticas por turnos.
+- Recomendaciones.
+
 # Contenido
 
 - Administrador de Combate (Combat Manager).
@@ -84,4 +92,4 @@ Al objeto vacío hijo del objeto “Skills” (hijo propiamente del personaje) a
 
 # Recomendaciones
 
-No modifiques los scripts, debido a que estos están relacionados entre sí. Solo modificalos para integrar el sistema a tus sistemas que ya tienes en el proyecto (Sistemas de progresión, de movimiento, de inventariuo, etc.).
+No modifiques los scripts, debido a que estos están relacionados entre sí. Solo modificalos para integrar el sistema a tus sistemas que ya tienes en el proyecto (Sistemas de progresión, de movimiento, de inventario, etc.).
