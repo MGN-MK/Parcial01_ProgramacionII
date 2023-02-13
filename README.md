@@ -32,12 +32,84 @@ El proyecto está listo para solo agregar los scripts y prefabs en los objetos d
 
 - Administrador de combate (Combat Manager).
 - Interfaz de combate (Paneles de estatus, Panel de logs, Interfaz de skills, Interfaz de personajes).
-- Interfaz de estatus actualizado después de cada turno.
 - Combate por turnos.
+- Interfaz de estatus actualizado en tiempo real.
 - Combate en dos equipos (Sin límite de miembros).
-- Habilidades que afectan la salud de tres formas diferentes: En base a las estadísticas, en base a porcentaje, y de cantidad fija.
+
+```jsx
+private void MakeTeams()
+    {
+        List<Character> playersBuffer = new List<Character>();
+        List<Character> enemiesBuffer = new List<Character>();
+
+				//Agrupa los personajes en listas de sus respectivos equipos de forma automática
+        foreach (var chrs in this.characters)
+        {
+            if (chrs.team == Team.PLAYERS)
+            {
+                playersBuffer.Add(chrs);
+            }
+            else if (chrs.team == Team.ENEMIES)
+            {
+                enemiesBuffer.Add(chrs);
+            }
+
+            chrs.combatManager = this;
+        }
+
+        playerTeam = playersBuffer.ToArray();
+        enemyTeam = enemiesBuffer.ToArray();
+    }
+```
+
+- Habilidades que afectan la salud de tres formas diferentes: En base a las estadísticas, de cantidad fija y en base a porcentaje.
+
+```jsx
+public float GetModification(Character target)
+    {
+        switch (modType)
+        {
+						//En base a estadísticas
+            case HealthModType.STAT_BASED:
+                Stats senderStats = sender.GetCurrentStats();
+                Stats targetStats = target.GetCurrentStats();
+
+                // Fórmula de pokemon: https://bulbapedia.bulbagarden.net/wiki/Damage
+                float rawDamage = (((2 * senderStats.lv) / 5) + 2) * this.amount * (senderStats.ap / targetStats.dp);
+
+                return (rawDamage / 50) + 2;
+						
+						//De forma fija
+            case HealthModType.FIXED:
+                return amount;
+
+						//En base a porcentaje
+            case HealthModType.PERCENTAGE:
+                Stats tStats = target.GetCurrentStats();
+
+                return tStats.maxHP * amount;
+        }
+
+        throw new System.InvalidOperationException("HealthModSkill::GetDamage. Unreachable!");
+    }
+```
+
 - Habilidades que le generan cambios a las estadísticas conforme pasen los turnos.
 - Todas las habilidades tienen cinco formas de afectar a los personajes: Autoinfligido, todos los aliados, todos los enemigos, a un solo aliado, o a un solo enemigo.
+
+```jsx
+public enum SkillTargeting
+{
+    //Seleccón de la víctima de forma automática
+    AUTO,
+    ALL_ALLIES,
+    ALL_OPPONENTS,
+
+    //Seleccón de la víctima de forma manual
+    SINGLE_ALLY,
+    SINGLE_OPPONENT
+}
+```
 
 [Índice](https://www.notion.so/ndice-607df48a93ae435683e2c25b86fb9bf3) 
 
@@ -78,8 +150,6 @@ Si estás utilizando la escena que viene por defecto puedes saltarte estos pasos
 
 Agrega a tus jugadores. A estos agrégales el script “PlayerCharacter” (Scripts > Characters > PlayerCharacter), y rellena los campos con sus respectivos componentes.
 
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled.png)
-
 - Team. Selecciona el equipo al que pertenece el personaje.
     - PLAYERS. Equipo de los jugadores.
     - ENEMIES. Equipo de los enemigos.
@@ -90,14 +160,17 @@ Agrega a tus jugadores. A estos agrégales el script “PlayerCharacter” (Scri
 - Condition. No es necesario que le asignes nada, ya que el código lo hace en automático cuando se necesita.
 - Skill Panel. Toma el panel de habilidades que le corresponde al personaje (se debe de encontrar dentro del canvas “UI”) y arrástralo para agregárselo.
 - Enemies Panel. Toma el panel de enemigos que le corresponde al personaje (se debe de encontrar dentro del canvas “UI”) y arrástralo para agregárselo.
+- Lv. Escribe el nivel del personaje.
+- Max HP. Escribe la salud máxima del personaje.
+- Ap. Escribe los puntos de ataque del personaje.
+- Dp. Escribe los puntos de defensa del personaje
+- Speed. Escribe la velocidad del personaje. Entre más veloz, será el primero en atacar.
 
 [Índice](https://www.notion.so/ndice-607df48a93ae435683e2c25b86fb9bf3) 
 
 ### Enemigos (Personajes con Inteligencia Artificial)
 
 Agrega a tus enemigos. A estos agrégales el script “EnemyCharacter” (Scripts > Characters > EnemyCharacter), y rellena los campos con sus respectivos componentes.
-
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%201.png)
 
 - Team. Selecciona el equipo al que pertenece el personaje.
     - PLAYERS. Equipo de los jugadores.
@@ -107,6 +180,11 @@ Agrega a tus enemigos. A estos agrégales el script “EnemyCharacter” (Script
 - Combat Manager. Toma el objeto “Combat Manager” que se encuentra dentro de tu “Hierarchy” y arrástralo para agregárselo.
 - Status Mods. No es necesario que lo modifiques, ya que es un listado para guardar las modificaciones de estatus durante la partida.
 - Condition. No es necesario que le asignes nada, ya que el código lo hace en automático cuando se necesita.
+- Lv. Escribe el nivel del personaje.
+- Max HP. Escribe la salud máxima del personaje.
+- Ap. Escribe los puntos de ataque del personaje.
+- Dp. Escribe los puntos de defensa del personaje
+- Speed. Escribe la velocidad del personaje. Entre más veloz, será el primero en atacar.
 
 [Índice](https://www.notion.so/ndice-607df48a93ae435683e2c25b86fb9bf3) 
 
@@ -116,15 +194,11 @@ Agrega a tus enemigos. A estos agrégales el script “EnemyCharacter” (Script
 
 Crea un objeto vacío llamado “Skills” como hijo del respectivo personaje, para tener organizados las habilidades de cada personaje.
 
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%202.png)
-
 [Índice](https://www.notion.so/ndice-607df48a93ae435683e2c25b86fb9bf3) 
 
 ### Habilidades de Salud
 
 Crea un objeto vacío hijo del objeto “Skills” ([Configurar las Skills de Cada Personaje](https://www.notion.so/Configurar-las-Skills-de-Cada-Personaje-5f81b3893f1d4b64ab53ef788e8849f7) ), agrégale como componente el script de “HealthModSkill” (Scripts > Skills > HealthModSkill), y rellena los campos con sus respectivos componentes.
-
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%203.png)
 
 - Skill Name. Escribe el nombre de la habilidad
 - Animation Duration. Escribe cuántos segundos durará la animación de la habilidad.
@@ -150,10 +224,6 @@ Crea un objeto vacío hijo del objeto “Skills” ([Configurar las Skills de Ca
 
 Crea objeto vacío hijo del objeto “Skills” ([Configurar las Skills de Cada Personaje](https://www.notion.so/Configurar-las-Skills-de-Cada-Personaje-5f81b3893f1d4b64ab53ef788e8849f7) ), agrégale como componente el script de “ApplySCSkill” (Scripts > StatusCondition> ApplySCSkills), y rellena los campos con sus respectivos componentes.
 
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%204.png)
-
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%205.png)
-
 - Skill Name. Escribe el nombre de la habilidad.
 - Animation Duration. Escribe cuántos segundos durará la animación de la habilidad.
 - Targeting. Selecciona el tipo de víctima de la habilidad.
@@ -170,8 +240,6 @@ Crea objeto vacío hijo del objeto “Skills” ([Configurar las Skills de Cada 
 
 Crea un objeto vacío como hijo del objeto creado anteriormente([Habilidades con Efectos por Turnos](https://www.notion.so/Habilidades-con-Efectos-por-Turnos-4533b6ed8e99414c8c16ce5a0cfa11a0) ), y agrégale como componente el script “HealthModStatusCondition” (Scripts > StatusCondition > HealthModStatusCondition) y rellena los campos con sus respectivos componentes.}
 
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%206.png)
-
 - Effect Prfb. Asigna el prefab del efecto que se va a crear en la misma posición de la víctima.
 - Animation Duration. Escribe cuántos segundos durará la animación de la habilidad.
 - Reception Message. Escribe el mensaje que se imprimirá cuando se ejecute la habilidad.
@@ -184,8 +252,6 @@ Crea un objeto vacío como hijo del objeto creado anteriormente([Habilidades con
 ### Habilidades para Bloquear Turnos
 
 Crea un objeto vacío como hijo del objeto creado anteriormente([Habilidades con Efectos por Turnos](https://www.notion.so/Habilidades-con-Efectos-por-Turnos-4533b6ed8e99414c8c16ce5a0cfa11a0) ), y agrégale como componente el script “TurnBlockStatusCondition” (Scripts > StatusCondition >TurnBlockStatusCondition) y rellena los campos con sus respectivos componentes.}
-
-![Untitled](Combat%20System%20c83811965c8547f99035947571ce87f1/Untitled%207.png)
 
 - Effect Prfb. Asigna el prefab del efecto que se va a crear en la misma posición de la víctima.
 - Animation Duration. Escribe cuántos segundos durará la animación de la habilidad.

@@ -39,7 +39,7 @@ public class HealthModSkill : Skill
                 Stats targetStats = target.GetCurrentStats();
 
                 // Fórmula de pokemon: https://bulbapedia.bulbagarden.net/wiki/Damage
-                float rawDamage = (((2 * senderStats.lv) / 5) + 2) * this.amount * (senderStats.ap / targetStats.dp);
+                float rawDamage = (((2 * senderStats.lv) / 5) + 2) * amount * (senderStats.ap / targetStats.dp);
 
                 return (rawDamage / 50) + 2;
             case HealthModType.FIXED:
